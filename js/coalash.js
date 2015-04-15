@@ -265,7 +265,7 @@ function buildMap() {
                     map.removeLayer(osm_BW)
                     map.addLayer(imagery)
                     map.addLayer(ponds)
-                    window.open(url,'_blank')
+                   //window.open(url,'_blank')
                 })
             })
         })//.addTo(map)
