@@ -16,11 +16,16 @@ function parseData(data){
 var map
 var states
 var ponds
-var plants
 //var points = L.geoJson()
+var pond_pts = []
+var point_fc
+//var pond_points
+var result
+var plants
 var red = "#A82904"
 var yellow = "#D9AD24"
 var green = "#88AD40"
+var supercount = 0
 
 
 
@@ -98,13 +103,21 @@ function buildMap() {
                     });
                     polygon.on('click', function(e){    
                         map.fitBounds(polygon.getBounds())
-                        map.addLayer(plants);
+                        //map.addLayer(plants);
                         map.removeLayer(acetate);
                         map.addLayer(osm_BW);
                         e.layer.setStyle({
                             weight: 3,
                             fillOpacity: 0,
                         })
+                        if (supercount > 0) {
+                            map.addLayer(plants)
+                        } else {
+                            buildPlants();
+                            map.addLayer(plants)
+                        }
+
+                        
                     }) 
                 })
         })
@@ -141,78 +154,17 @@ function buildMap() {
             }
         });
 
-    ///SET PLANT LAYER
-    plants = omnivore.geojson('data/plants.geojson')
-    .on('ready', function(go){
-        this.eachLayer(function(marker) {
-            var plant = marker.feature.properties.label
-            var gal = 0
-            var condition = 0
-            var count = 0
-            var value = 0
-            omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
-            .on('ready', function(go) {
-                this.eachLayer(function(polygon) {
-                    if (polygon.feature.properties.plant_labe == plant) {
-                        count += 1
-                        gal += polygon.feature.properties.gallons
-                        if (polygon.feature.properties.epa_con_as == "Poor") {
-                            value += 3;
-                        } else if (polygon.feature.properties.epa_con_as == "Fair") {
-                            value += 2;
-                        } else if (polygon.feature.properties.epa_con_as == "Satisfactory") {
-                            value += 1;
-                        } else {
-                            value += 0;
-                        }
-                        condition += value
-                    }
-                    console.log(condition/count)
-                })
-            })
-            var color
-            console.log(condition/count)
-            if (condition/count > 3) {
-                color = "#fff";
-            } else if (condition/count > 1.5) {
-                color = yellow;
-            } else if (condition/count > 0) {
-                color = green;
-            } else {color="#594736"}
-           /* if (marker.feature.properties.contamin_1 == 'Yes') {
-                color = red
-            } else {
-                color = yellow
-            }*/
-            marker.setIcon(L.divIcon( {
-                iconSize: [1, 1],
-                popupAnchor: [0, 10], 
-                html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:3px solid rgba( 255, 255, 255, 0.5 ); height: 30px; width: 30px; padding: 5px; border-radius:50%; background:' +
-                color + '">' + marker.feature.properties.number_of1 + '</div>'
-            }))
-            var label = marker.feature.properties.label
-            marker.bindLabel(label)
-            
-            marker.on('click', function(e){
-                console.log(e)
-                map.setView(e.latlng, 14)
-                map.removeLayer(plants)
-                map.removeLayer(osm_BW)
-                map.addLayer(imagery)
-                map.addLayer(ponds)
-            })
-        })
-    })
-    
-    /// CREATING PLAN GEOJSON
-    //plants = L.geoJson().addTo(map);
-
-    
     /// ADD PONDS + CREATE PLANTS
     ponds = omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
     .on('ready', function(go) {
-        console.log(go)
-        this.eachLayer(function(polygon) {            
+        this.eachLayer(function(polygon) {
+            var ll = [Number(polygon.feature.properties.longitude), Number(polygon.feature.properties.latitude)]
+            var pt = turf.point(ll, {
+                "condition": polygon.feature.properties.epa_con_as,
+                "gal": polygon.feature.properties.gallons,
+            })
+            pond_pts.push(pt)
+                        
             /// Set Style
             if (polygon.feature.properties.epa_con_as == "Poor") {
                 polygon.setStyle ( {
@@ -240,10 +192,10 @@ function buildMap() {
                 })
             } else {
                 polygon.setStyle ( {
-                            color: '#594736', 
+                            color: '#1334B9',//'#594736', 
                             opacity: 1,
                             weight: 3, 
-                            fillColor: '#594736',  
+                            fillColor: '#1334B9',//'#594736',  
                             fillOpacity: .3
                 })
             }
@@ -257,11 +209,78 @@ function buildMap() {
             polygon.on('click', function(e) {
                 map.setView(e.latlng, 14)
             })
+            
         })
+        point_fc = turf.featurecollection(pond_pts)
+
     })
     //.addTo(map);
+    
+    
+    ///SET PLANT LAYER
+    function buildPlants() {
+        supercount += 1
+        plants = omnivore.geojson('data/plants.geojson')
+        .on('ready', function(go){
+            this.eachLayer(function(marker) {
+                var buffered = turf.buffer(marker.feature, 3, 'miles');
+                var result = turf.featurecollection([buffered.features[0]]);
+                //L.mapbox.featureLayer(result).addTo(map)
+                
+                //// TURF.JS WITHIN
+                var ptsWithin = turf.within(point_fc, result)
+                //console.log(ptsWithin)
+                var count = 0
+                var gal = 0
+                var value = 0
+                var condition= 0
+                for (i = 0; i < ptsWithin.features.length; i++) {
+                    count += 1
+                    gal += ptsWithin.features[i].properties.gal;
+                    if (ptsWithin.features[i].properties.condition == "Poor") {
+                                    value += 3;
+                                } else if (ptsWithin.features[i].properties.condition == "Fair") {
+                                    value += 2;
+                                } else if (ptsWithin.features[i].properties.condition == "Satisfactory") {
+                                    value += 1;
+                                } else {
+                                    value += 0;
+                                }
+                                condition += value
+                }
+                console.log(condition/count)
+    
+                var color            
+                if (condition/count > 3) {
+                    color = red;
+                } else if (condition/count > 1.5) {
+                    color = yellow;
+                } else if (condition/count > 0) {
+                    color = green;
+                } else {color="#594736"}
+                
+                marker.setIcon(L.divIcon( {
+                    iconSize: [1, 1],
+                    popupAnchor: [0, 10], 
+                    html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:3px solid rgba( 255, 255, 255, 0.5 ); height: 30px; width: 30px; padding: 5px; border-radius:50%; background:' +
+                    color + '">' + marker.feature.properties.number_of1 + '</div>'
+                }))
+                var label = marker.feature.properties.label
+                marker.bindLabel(label)
+                
+                marker.on('click', function(e){
+                    console.log(e)
+                    map.setView(e.latlng, 14)
+                    map.removeLayer(plants)
+                    map.removeLayer(osm_BW)
+                    map.addLayer(imagery)
+                    map.addLayer(ponds)
+                })
+            })
+        })//.addTo(map)
+    }
         
-
+        
     //// MAP ZOOM COMMANDS 
     map.on('zoomend', function(){
             if (map.getZoom()>=13) {
