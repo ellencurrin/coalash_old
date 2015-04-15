@@ -133,12 +133,12 @@ function buildMap() {
                     fillOpacity: 0, 
                 });
         });
-        states.on('mouseout', function(e) {
+        /*states.on('mouseout', function(e) {
             e.layer.setStyle ( {
                     weight: 2, 
                     fillOpacity: 0.4, 
             });
-        })
+        })*/
         
 
     /// ADD PONDS + CREATE PLANTS
