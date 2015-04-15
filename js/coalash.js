@@ -238,24 +238,26 @@ function buildMap() {
                     count += 1
                     gal += ptsWithin.features[i].properties.gal;
                     if (ptsWithin.features[i].properties.condition == "Poor") {
-                                    value += 3;
-                                } else if (ptsWithin.features[i].properties.condition == "Fair") {
-                                    value += 2;
-                                } else if (ptsWithin.features[i].properties.condition == "Satisfactory") {
-                                    value += 1;
-                                } else {
-                                    value += 0;
-                                }
-                                condition += value
+                        value = 3;
+                    } else if (ptsWithin.features[i].properties.condition == "Fair") {
+                        value = 2;
+                    } else if (ptsWithin.features[i].properties.condition == "Satisfactory") {
+                        value = 1;
+                    } else {
+                        value = 0;
+                    }
+                    if (value > condition) {
+                        condition = value
+                    }
                 }
-                console.log(condition/count)
+                console.log(condition)
     
                 var color            
-                if (condition/count > 3) {
+                if (condition == 3) {
                     color = red;
-                } else if (condition/count > 1.5) {
+                } else if (condition == 2) {
                     color = yellow;
-                } else if (condition/count > 0) {
+                } else if (condition == 1) {
                     color = green;
                 } else {color="#594736"}
                 
@@ -263,10 +265,11 @@ function buildMap() {
                     iconSize: [1, 1],
                     popupAnchor: [0, 10], 
                     html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:3px solid rgba( 255, 255, 255, 0.5 ); height: 30px; width: 30px; padding: 5px; border-radius:50%; background:' +
-                    color + '">' + marker.feature.properties.number_of1 + '</div>'
+                    color + '">' + count + '</div>'
                 }))
-                var label = marker.feature.properties.label
+                var label = marker.feature.properties.power_plan
                 marker.bindLabel(label)
+                var url = marker.feature.properties.factsheet
                 
                 marker.on('click', function(e){
                     console.log(e)
@@ -275,6 +278,7 @@ function buildMap() {
                     map.removeLayer(osm_BW)
                     map.addLayer(imagery)
                     map.addLayer(ponds)
+                    window.open(url,'_blank')
                 })
             })
         })//.addTo(map)
