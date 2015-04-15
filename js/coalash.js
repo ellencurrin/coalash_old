@@ -124,12 +124,6 @@ function buildMap() {
         .addTo(map);
         
         states.on('mouseover', function(e) {
-            if (map.getZoom()<=6) {
-                e.layer.setStyle({
-                    weight: 3,
-                    fillOpacity: 0.2, 
-                });
-            } else {
                 states.setStyle ({
                     weight: 2, 
                     fillOpacity: 0.4, 
@@ -138,21 +132,14 @@ function buildMap() {
                     weight: 2, 
                     fillOpacity: 0, 
                 });
-            }
         });
         states.on('mouseout', function(e) {
-            if (map.getZoom()<=6) {
-                e.layer.setStyle ( {
+            e.layer.setStyle ( {
                     weight: 2, 
                     fillOpacity: 0.4, 
-                });
-            } else {
-                e.layer.setStyle ( {
-                    weight: 2, 
-                    fillOpacity: 0, 
-                });
-            }
-        });
+            });
+        })
+        
 
     /// ADD PONDS + CREATE PLANTS
     ponds = omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
@@ -302,78 +289,10 @@ function buildMap() {
     
 }
 
-  
-
-
 
 function resetExtent(){
     map.setView([34.2190, -84.5266], 6)
     map.removeLayer(plants)
     map.removeLayer(ponds)
     
-}
-
-function concatPlant(polygon, ll, gal, condition, counter, ONE) {
-    console.log("concat plant")
-    ONE = polygon.feature.properties.plant_labe
-    ll.push([Number(polygon.feature.properties.latitude), Number(polygon.feature.properties.longitude)])
-    //console.log(ll)
-    gal += polygon.feature.properties.gallons
-    var value
-    if (polygon.feature.properties.epa_con_as == "Poor") {
-        value = 3;
-    } else if (polygon.feature.properties.epa_con_as == "Fair") {
-        value = 2;
-    } else if (polygon.feature.properties.epa_con_as == "Satisfactory") {
-        value = 1;
-    } else {
-        value = 0;
-    }
-    condition += value
-    var TWO = polygon.feature.properties.plant_labe
-    console.log(TWO)
-    return ll, gal, condition, counter, TWO
-}
-
-function newPlant(polygon, ll, gal, condition, counter, ONE){
-    console.log("creating new plant")
-    //console.log(ll)
-    ONE = polygon.feature.properties.plant_labe
-    if (ll.length == 0) {
-        ll = [Number(polygon.feature.properties.longitude), Number(polygon.feature.properties.latitude)]
-        type = "Point"
-    } else {
-        type = "Polygon"
-    }
-    var geojsonFeature = {
-        "type": "Feature",
-        "properties": {
-            "tot_gallons": gal,
-            "con_value": condition,
-            "num_ponds": counter
-        },
-        "geometry": {
-            "type": type,
-            "coordinates": ll
-        }
-    };
-    plants.addData(geojsonFeature);
-    
-    var TWO = polygon.feature.properties.plant_labe
-    console.log(TWO)
-    ll = [Number(polygon.feature.properties.longitude), Number(polygon.feature.properties.latitude)]
-    gal = polygon.feature.properties.gallons
-    counter = 1
-    var value
-    if (polygon.feature.properties.epa_con_as == "Poor") {
-        value = 3;
-    } else if (polygon.feature.properties.epa_con_as == "Fair") {
-        value = 2;
-    } else if (polygon.feature.properties.epa_con_as == "Satisfactory") {
-        value = 1;
-    } else {
-        value = 0;
-    }
-    condition = value
-    return ll, gal, condition, counter, TWO
 }
