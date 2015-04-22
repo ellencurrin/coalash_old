@@ -9,7 +9,6 @@ function loadLayers (data) {
 function parseData(data){
         dataObj = $.parseJSON(data);
         console.log(dataObj);
-        return dataObj
 }
 
 
@@ -17,10 +16,12 @@ function parseData(data){
 var map
 var states
 var ponds
+//var points = L.geoJson()
+var pond_pts = []
+var point_fc
+//var pond_points
+var result
 var plants
-var plant_fc
-var imagery
-var BW
 var red = "#A82904"
 var yellow = "#D9AD24"
 var green = "#88AD40"
@@ -31,7 +32,7 @@ var supercount = 0
 
 $( document ).ready(function() {
     console.log("document ready")
-    loadLayers('data/plants.geojson');
+    loadLayers('data/impoundments_selc.geojson');
     //loadLayers('data/plants.geojson');
     buildMap();
     $('#layers-list').dropdown('toggle');
@@ -63,20 +64,20 @@ function buildMap() {
 	minZoom: 2,
 	maxZoom: 18
     })
-    //.addTo(map);
+    .addTo(map);
     
-    BW = L.tileLayer('http://openmapsurfer.uni-hd.de/tiles/roadsg/x={x}&y={y}&z={z}', {
+    var osm_BW = L.tileLayer('http://openmapsurfer.uni-hd.de/tiles/roadsg/x={x}&y={y}&z={z}', {
 	minZoom: 0,
 	maxZoom: 19,
 	attribution: 'Imagery from <a href="http://giscience.uni-hd.de/">GIScience Research Group @ University of Heidelberg</a> &mdash; Map data &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-    })//.addTo(map)
+    });
     
-    /*var osm_BW = L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
+    /*L.tileLayer('http://{s}.tiles.wmflabs.org/bw-mapnik/{z}/{x}/{y}.png', {
 	attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
     })*/
     //.addTo(map);
     
-    imagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+    var imagery = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
 	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     })
     //.addTo(map);
@@ -89,7 +90,7 @@ function buildMap() {
                     color: '#E3E3DD',
                     weight: 1,
                     fillColor: '#E3E3DD',//'#C3C3BE',
-                    fillOpacity: .5,
+                    fillOpacity: .9,
                 })    
             })
         })
@@ -98,107 +99,64 @@ function buildMap() {
     /// ADD SE STATES
     states = omnivore.geojson('data/states_selc.geojson')
         .on('ready', function(go) {
-                buildPlants();
                 this.eachLayer(function(polygon) {
-                    /*var poly_fc = {
-                        "type": "FeatureCollection",
-                        "features": [
-                          {
-                            "type": "Feature",
-                            "properties": polygon.feature.properties,
-                            "geometry": polygon.feature.geometry,
-                          }
-                        ]
-                      };
-                    
-                    
-                    var item = turf.featurecollection(polygon.toGeoJSON());
-                    //console.log(poly_fc)
-                    //console.log(dataObj)
-                    var ptsWithin = turf.within(dataObj, poly_fc);
-                    console.log(ptsWithin)
-                    var count = 0
-                    for (i = 0; i < ptsWithin.features.length; i++) {
-                        if (ptsWithin.features[i].properties.selc_ltgtn == "Yes") {
-                            count += 1;
-                        }
-                    }
-                    var op = count/10
-                    console.log(Number(op))
-                    
-                    
                     polygon.setStyle ( {
                                     color: '#C3C3BE', 
                                     opacity: 1,
                                     weight: 2, 
-                                    fillColor: '#FF5335',//'#DC3522',  
-                                    fillOpacity: op
-                    });*/
-                    
-                    polygon.setStyle ( {
-                                    color: '#C3C3BE', 
-                                    opacity: 1,
-                                    weight: 3,
-                                    fillColor: '#C2D193',
-                                    fillOpacity: .4,
+                                    fillColor: '#C2D193',  
+                                    fillOpacity: .4
                     });
-                    
                     polygon.on('click', function(e){    
                         map.fitBounds(polygon.getBounds())
                         //map.addLayer(plants);
                         map.removeLayer(acetate);
-                        map.addLayer(BW);
-                        states.setStyle({
+                        map.addLayer(osm_BW);
+                        e.layer.setStyle({
                             weight: 3,
-                            fillColor: '#C3C3BE',
-                            fillOpacity: .4,
-                        });
-                        e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                        });
-                        /*states.on('mouseover', function(e) {
-                                states.setStyle({
-                                    fillOpacity: .4
-                                })
-                                e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                                });
-                        });
-                        states.on('mouseout', function(e) {
-                            e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                            });
-                        });*/
-                        map.addLayer(plants)                      
+                            fillOpacity: 0,
+                        })
+                        if (supercount > 0) {
+                            map.addLayer(plants)
+                        } else {
+                            buildPlants();
+                            map.addLayer(plants)
+                        }
+
+                        
                     }) 
                 })
         })
         .addTo(map);
         
         states.on('mouseover', function(e) {
-                states.setStyle ( {
+                states.setStyle ({
                     weight: 2, 
-                    fillOpacity: .4, 
-                });
+                    fillOpacity: 0.4, 
+                })
                 e.layer.setStyle ( {
                     weight: 2, 
                     fillOpacity: 0, 
                 });
         });
-        states.on('mouseout', function(e) {
+        /*states.on('mouseout', function(e) {
             e.layer.setStyle ( {
                     weight: 2, 
-                    fillOpacity: 0, 
-                });
-        });
+                    fillOpacity: 0.4, 
+            });
+        })*/
+        
 
     /// ADD PONDS + CREATE PLANTS
     ponds = omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
     .on('ready', function(go) {
         this.eachLayer(function(polygon) {
+            var ll = [Number(polygon.feature.properties.longitude), Number(polygon.feature.properties.latitude)]
+            var pt = turf.point(ll, {
+                "condition": polygon.feature.properties.epa_con_as,
+                "gal": polygon.feature.properties.gallons,
+            })
+            pond_pts.push(pt)
                         
             /// Set Style
             if (polygon.feature.properties.epa_con_as == "Poor") {
@@ -246,6 +204,7 @@ function buildMap() {
             })
             
         })
+        point_fc = turf.featurecollection(pond_pts)
 
     })
     //.addTo(map);
@@ -257,46 +216,65 @@ function buildMap() {
         plants = omnivore.geojson('data/plants.geojson')
         .on('ready', function(go){
             this.eachLayer(function(marker) {
-
-    
-                var color= '#374140'//'rgba(0, 163, 136, 1)' //'#00A388'
-                var border_color
-                var label = marker.feature.properties.power_plan
-                var content
-                var src
+                var buffered = turf.buffer(marker.feature, 3, 'miles');
+                var result = turf.featurecollection([buffered.features[0]]);
+                //L.mapbox.featureLayer(result).addTo(map)
                 
-                if (marker.feature.properties.selc_ltgtn == "Yes") {
-                    border_color = 'rgba(255, 97, 56, 1)', //'#FF6138'
-                    src = 'http://welovemountainislandlake.files.wordpress.com/2013/01/riverbendcoalash-wbobbit.jpg',
-                    content = marker.feature.properties.power_plan + '</br><img src="' + src + '" style="width: 180px; height: 180px;">',
-                    marker.bindLabel(content)
-                } else {
-                    border_color = 'rgba(255, 255, 255, .5)',
-                    marker.bindLabel(label)
+                //// TURF.JS WITHIN
+                var ptsWithin = turf.within(point_fc, result)
+                //console.log(ptsWithin)
+                var count = 0
+                var gal = 0
+                var value = 0
+                var condition= 0
+                for (i = 0; i < ptsWithin.features.length; i++) {
+                    count += 1
+                    gal += ptsWithin.features[i].properties.gal;
+                    if (ptsWithin.features[i].properties.condition == "Poor") {
+                        value = 3;
+                    } else if (ptsWithin.features[i].properties.condition == "Fair") {
+                        value = 2;
+                    } else if (ptsWithin.features[i].properties.condition == "Satisfactory") {
+                        value = 1;
+                    } else {
+                        value = 0;
+                    }
+                    if (value > condition) {
+                        condition = value
+                    }
                 }
+                console.log(condition)
+    
+                var color            
+                if (condition == 3) {
+                    color = red;
+                } else if (condition == 2) {
+                    color = yellow;
+                } else if (condition == 1) {
+                    color = green;
+                } else {color="#594736"}
                 
                 marker.setIcon(L.divIcon( {
                     iconSize: [1, 1],
                     popupAnchor: [0, 10], 
-                    html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:4px solid ' + border_color +'; height: 20px; width: 20px; padding: 5px; border-radius:50%; background:' +
-                    color + '"></div>'
+                    html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:3px solid rgba( 255, 255, 255, 0.5 ); height: 30px; width: 30px; padding: 5px; border-radius:50%; background:' +
+                    color + '">' + count + '</div>'
                 }))
-                /*var label = marker.feature.properties.power_plan
-                marker.bindLabel(label)*/
+                var label = marker.feature.properties.power_plan
+                marker.bindLabel(label)
                 var url = marker.feature.properties.factsheet
                 
                 marker.on('click', function(e){
                     console.log(e)
                     map.setView(e.latlng, 14)
-                    //marker.bindLabel(label)
-                    openDialog(marker, src)
-                    map.removeLayer(BW)
+                    map.removeLayer(plants)
+                    map.removeLayer(osm_BW)
                     map.addLayer(imagery)
                     map.addLayer(ponds)
                    //window.open(url,'_blank')
                 })
             })
-        }).addTo(map)
+        })//.addTo(map)
     }
         
         
@@ -308,29 +286,19 @@ function buildMap() {
                 map.addLayer(imagery);
             }else if (map.getZoom()<=6){
                 console.log("zoom less than 6")
-                //map.removeLayer(osm_BW);
-                //map.addLayer(acetate);
+                map.removeLayer(osm_BW);
+                map.addLayer(acetate);
                 map.removeLayer(ponds);
-                //map.removeLayer(plants);
+                map.removeLayer(plants);
             }
     })
     
 }
 
-function openDialog(marker, src) {
-    bootbox.dialog({
-            message: '<img src="'+ src +'" style="width: 100%; height: 100%">',
-            title: '<h4 style="color: black;">'+ marker.feature.properties.power_plan +'</h4>',
-    })
-}
-
 
 function resetExtent(){
-    /*map.setView([34.2190, -84.5266], 6)
+    map.setView([34.2190, -84.5266], 6)
     map.removeLayer(plants)
     map.removeLayer(ponds)
-    map.removeLayer(imagery)
-    //map.addLayer(BW)*/
-    location.reload()
     
 }
