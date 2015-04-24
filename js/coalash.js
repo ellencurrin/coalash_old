@@ -109,7 +109,7 @@ function buildMap() {
                 map.addLayer(BW);
                 map.addLayer(plants);
                 map.removeLayer(imagery);
-                document.getElementById("instructions").innerHTML= "Click on a plant to learn more."
+                document.getElementById("instructions").innerHTML= "Click on a state to zoom in, or click on a plant to learn more."
             }
     })
     
