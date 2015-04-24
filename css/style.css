@@ -2,6 +2,18 @@
 .navbar {margin: 0;}
 
 #map {height: 100vh; width: 100vw;}
+#instructions {
+    position: absolute;
+    z-index: 10;
+    margin: 20px 8vw 0px 8vw;
+    text-align: center;
+    background-color: #666;
+    opacity: .6;
+    padding: 7px;
+    border-radius: 8px;
+    color: #fff;
+    font-size: 2em;
+}
 #pond_points {height: 100vh; width: 100vw;}
 
 button {

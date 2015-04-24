@@ -13,7 +13,7 @@ function parseData(data){
 }
 
 
-// ****DEFINE VARIABLES
+/// VARIABLES
 var map
 var states
 var ponds
@@ -41,14 +41,12 @@ $( document ).ready(function() {
 
 
 function buildMap() {
-
-//****** BUILDING MAP 
     L.mapbox.accessToken = 'pk.eyJ1IjoiZWxjdXJyIiwiYSI6IkZMekZlUEEifQ.vsXDy4z_bxRXyhSIvBXc2A';    
     map = L.mapbox.map('map', {
             minZoom: 6,
             zoomControl: false,
         })
-        .setView([34.2190, -83.5266], 6);
+        //.setView([34.2190, -83.5266], 7);
         
         // Disable drag and zoom handlers.
         //map.dragging.disable();
@@ -80,8 +78,47 @@ function buildMap() {
 	attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
     })
     //.addTo(map);
+
+    buildPonds()
+    buildStates()
     
-    ///ADD OTHER STATES
+    states.on('mouseover', function(e) {
+        states.setStyle ( {
+            weight: 2, 
+            fillOpacity: .4, 
+        });
+        e.layer.setStyle ( {
+            weight: 2, 
+            fillOpacity: 0, 
+        });
+    });
+    states.on('mouseout', function(e) {
+        e.layer.setStyle ( {
+            weight: 2, 
+            fillOpacity: 0, 
+        });
+    });
+               
+        
+    //// MAP ZOOM COMMANDS 
+    map.on('zoomend', function(){
+            if (map.getZoom()>=13) {
+                map.addLayer(imagery);
+            } else if (map.getZoom()<=10){
+                map.removeLayer(ponds);
+                map.addLayer(BW);
+                map.addLayer(plants);
+                map.removeLayer(imagery);
+                document.getElementById("instructions").innerHTML= "Click on a plant to learn more."
+            }
+    })
+    
+    document.getElementById("instructions").innerHTML= "Click on a state to zoom in, or click on a plant to learn more."
+       
+}
+
+function buildStates() {
+    /// ADD OTHER STATES
     others = omnivore.geojson('data/other_states-simple.json')
         .on('ready', function(go) {
             this.eachLayer(function(polygon){
@@ -93,113 +130,92 @@ function buildMap() {
                 })    
             })
         })
-        .addTo(map)
-    
+        .addTo(map)    
     /// ADD SE STATES
     states = omnivore.geojson('data/states_selc.geojson')
         .on('ready', function(go) {
-                buildPlants();
-                this.eachLayer(function(polygon) {
-                    /*var poly_fc = {
-                        "type": "FeatureCollection",
-                        "features": [
-                          {
-                            "type": "Feature",
-                            "properties": polygon.feature.properties,
-                            "geometry": polygon.feature.geometry,
-                          }
-                        ]
-                      };
-                    
-                    
-                    var item = turf.featurecollection(polygon.toGeoJSON());
-                    //console.log(poly_fc)
-                    //console.log(dataObj)
-                    var ptsWithin = turf.within(dataObj, poly_fc);
-                    console.log(ptsWithin)
-                    var count = 0
-                    for (i = 0; i < ptsWithin.features.length; i++) {
-                        if (ptsWithin.features[i].properties.selc_ltgtn == "Yes") {
-                            count += 1;
-                        }
-                    }
-                    var op = count/10
-                    console.log(Number(op))
-                    
-                    
-                    polygon.setStyle ( {
-                                    color: '#C3C3BE', 
-                                    opacity: 1,
-                                    weight: 2, 
-                                    fillColor: '#FF5335',//'#DC3522',  
-                                    fillOpacity: op
-                    });*/
-                    
-                    polygon.setStyle ( {
-                                    color: '#C3C3BE', 
-                                    opacity: 1,
-                                    weight: 3,
-                                    fillColor: '#C2D193',
-                                    fillOpacity: .4,
+            this.eachLayer(function(polygon) {                    
+                polygon.setStyle ( {
+                    color: '#C3C3BE', 
+                    opacity: 1,
+                    weight: 2,
+                    fillColor: '#C2D193',
+                    fillOpacity: .4,
+                });
+                
+                polygon.on('click', function(e){    
+                    map.fitBounds(polygon.getBounds())
+                    map.addLayer(BW);
+                    states.setStyle({
+                        weight: 3,
+                        fillColor: '#C3C3BE',
+                        fillOpacity: .4,
                     });
-                    
-                    polygon.on('click', function(e){    
-                        map.fitBounds(polygon.getBounds())
-                        //map.addLayer(plants);
-                        map.removeLayer(acetate);
-                        map.addLayer(BW);
-                        states.setStyle({
-                            weight: 3,
-                            fillColor: '#C3C3BE',
-                            fillOpacity: .4,
-                        });
-                        e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                        });
-                        /*states.on('mouseover', function(e) {
-                                states.setStyle({
-                                    fillOpacity: .4
-                                })
-                                e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                                });
-                        });
-                        states.on('mouseout', function(e) {
-                            e.layer.setStyle ( {
-                                    weight: 2, 
-                                    fillOpacity: 0, 
-                            });
-                        });*/
-                        map.addLayer(plants)                      
-                    }) 
-                })
+                    e.layer.setStyle ( {
+                        weight: 2, 
+                        fillOpacity: 0, 
+                    });
+                    document.getElementById("instructions").innerHTML= "Click on a plant to learn more."
+                }) 
+            })
+            
+            buildPlants();
         })
         .addTo(map);
-        
-        states.on('mouseover', function(e) {
-                states.setStyle ( {
-                    weight: 2, 
-                    fillOpacity: .4, 
-                });
-                e.layer.setStyle ( {
-                    weight: 2, 
-                    fillOpacity: 0, 
-                });
-        });
-        states.on('mouseout', function(e) {
-            e.layer.setStyle ( {
-                    weight: 2, 
-                    fillOpacity: 0, 
-                });
-        });
+}
 
-    /// ADD PONDS + CREATE PLANTS
+function buildPlants() {
+    plants = omnivore.geojson('data/plants.geojson')
+    .on('ready', function(go){
+        this.eachLayer(function(marker) {
+            var color= '#374140'//'rgba(0, 163, 136, 1)' //'#00A388'
+            var border_color
+            var label = marker.feature.properties.power_plan
+            var content
+            var src
+            
+            if (marker.feature.properties.selc_ltgtn == "Yes") {
+                border_color = 'rgba(255, 97, 56, 1)', //'#FF6138'
+                src = 'http://welovemountainislandlake.files.wordpress.com/2013/01/riverbendcoalash-wbobbit.jpg',
+                content = marker.feature.properties.power_plan + '</br><img src="' + src + '" style="width: 180px; height: 180px;">',
+                marker.bindLabel(content)
+            } else {
+                border_color = 'rgba(255, 255, 255, .5)',
+                marker.bindLabel(label)
+            }
+            
+            marker.setIcon(L.divIcon( {
+                iconSize: [1, 1],
+                popupAnchor: [0, 10], 
+                html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:4px solid ' + border_color +'; height: 20px; width: 20px; padding: 5px; border-radius:50%; background:' +
+                color + '"></div>'
+            }))
+            /*var label = marker.feature.properties.power_plan
+            marker.bindLabel(label)*/
+            var url = marker.feature.properties.factsheet
+            
+            marker.on('click', function(e){
+                console.log(e)
+                map.setView(e.latlng, 15)
+                if (marker.feature.properties.selc_ltgtn == "Yes") {
+                    openDialog(marker, src)
+                }
+                map.removeLayer(BW)
+                map.removeLayer(plants)
+                map.addLayer(imagery)
+                map.addLayer(ponds)
+               //window.open(url,'_blank')
+               document.getElementById("instructions").innerHTML= "Hover over a pond to learn more."
+            })
+        })
+    }).addTo(map)
+    map.fitBounds(states.getBounds())
+}
+
+function buildPonds() {
     ponds = omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
     .on('ready', function(go) {
-        this.eachLayer(function(polygon) {
-                        
+        this.eachLayer(function(polygon) {         
             /// Set Style
             if (polygon.feature.properties.epa_con_as == "Poor") {
                 polygon.setStyle ( {
@@ -207,7 +223,7 @@ function buildMap() {
                             opacity: 1,
                             weight: 3, 
                             fillColor: red,  
-                            fillOpacity: .3
+                            fillOpacity: 0
                 })
             } else if (polygon.feature.properties.epa_con_as == "Fair") {
                 polygon.setStyle ( {
@@ -215,7 +231,7 @@ function buildMap() {
                             opacity: 1,
                             weight: 3, 
                             fillColor: yellow,  
-                            fillOpacity: .3
+                            fillOpacity: 0
                 })
             } else if (polygon.feature.properties.epa_con_as == "Satisfactory") {
                 polygon.setStyle ( {
@@ -223,7 +239,7 @@ function buildMap() {
                             opacity: 1,
                             weight: 3, 
                             fillColor: green,  
-                            fillOpacity: .3
+                            fillOpacity: 0
                 })
             } else {
                 polygon.setStyle ( {
@@ -231,7 +247,7 @@ function buildMap() {
                             opacity: 1,
                             weight: 3, 
                             fillColor: '#1334B9',//'#594736',  
-                            fillOpacity: .3
+                            fillOpacity: 0
                 })
             }
             
@@ -242,80 +258,15 @@ function buildMap() {
             polygon.bindLabel(label)
             
             polygon.on('click', function(e) {
-                map.setView(e.latlng, 14)
+                map.setView(e.latlng, 15)
             })
             
         })
 
     })
     //.addTo(map);
-    
-    
-    ///SET PLANT LAYER
-    function buildPlants() {
-        supercount += 1
-        plants = omnivore.geojson('data/plants.geojson')
-        .on('ready', function(go){
-            this.eachLayer(function(marker) {
-
-    
-                var color= '#374140'//'rgba(0, 163, 136, 1)' //'#00A388'
-                var border_color
-                var label = marker.feature.properties.power_plan
-                var content
-                var src
-                
-                if (marker.feature.properties.selc_ltgtn == "Yes") {
-                    border_color = 'rgba(255, 97, 56, 1)', //'#FF6138'
-                    src = 'http://welovemountainislandlake.files.wordpress.com/2013/01/riverbendcoalash-wbobbit.jpg',
-                    content = marker.feature.properties.power_plan + '</br><img src="' + src + '" style="width: 180px; height: 180px;">',
-                    marker.bindLabel(content)
-                } else {
-                    border_color = 'rgba(255, 255, 255, .5)',
-                    marker.bindLabel(label)
-                }
-                
-                marker.setIcon(L.divIcon( {
-                    iconSize: [1, 1],
-                    popupAnchor: [0, 10], 
-                    html: '<div style="margin-top: -10px; margin-left: -10px; text-align:center; color:#fff; border:4px solid ' + border_color +'; height: 20px; width: 20px; padding: 5px; border-radius:50%; background:' +
-                    color + '"></div>'
-                }))
-                /*var label = marker.feature.properties.power_plan
-                marker.bindLabel(label)*/
-                var url = marker.feature.properties.factsheet
-                
-                marker.on('click', function(e){
-                    console.log(e)
-                    map.setView(e.latlng, 14)
-                    //marker.bindLabel(label)
-                    openDialog(marker, src)
-                    map.removeLayer(BW)
-                    map.addLayer(imagery)
-                    map.addLayer(ponds)
-                   //window.open(url,'_blank')
-                })
-            })
-        }).addTo(map)
-    }
-        
-        
-    //// MAP ZOOM COMMANDS 
-    map.on('zoomend', function(){
-            if (map.getZoom()>=13) {
-                console.log("zoom greater than or equal 13")
-                //map.removeLayer(osm_BW);
-                map.addLayer(imagery);
-            }else if (map.getZoom()<=6){
-                console.log("zoom less than 6")
-                //map.removeLayer(osm_BW);
-                //map.addLayer(acetate);
-                map.removeLayer(ponds);
-                //map.removeLayer(plants);
-            }
-    })
-    
 }
+
 
 function openDialog(marker, src) {
     bootbox.dialog({
@@ -326,11 +277,40 @@ function openDialog(marker, src) {
 
 
 function resetExtent(){
-    /*map.setView([34.2190, -84.5266], 6)
-    map.removeLayer(plants)
-    map.removeLayer(ponds)
-    map.removeLayer(imagery)
-    //map.addLayer(BW)*/
-    location.reload()
-    
+    location.reload()  
 }
+
+
+/*var poly_fc = {
+    "type": "FeatureCollection",
+    "features": [
+      {
+        "type": "Feature",
+        "properties": polygon.feature.properties,
+        "geometry": polygon.feature.geometry,
+      }
+    ]
+};
+     
+var item = turf.featurecollection(polygon.toGeoJSON());
+//console.log(poly_fc)
+//console.log(dataObj)
+var ptsWithin = turf.within(dataObj, poly_fc);
+console.log(ptsWithin)
+var count = 0
+for (i = 0; i < ptsWithin.features.length; i++) {
+if (ptsWithin.features[i].properties.selc_ltgtn == "Yes") {
+    count += 1;
+}
+}
+var op = count/10
+console.log(Number(op))
+
+
+polygon.setStyle ( {
+            color: '#C3C3BE', 
+            opacity: 1,
+            weight: 2, 
+            fillColor: '#FF5335',//'#DC3522',  
+            fillOpacity: op
+});*/
