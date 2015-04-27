@@ -13,6 +13,9 @@
     <script src="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.2/js/bootstrap.min.js"></script>
     <!-- BOOTBOX POPUP -->
     <script type="text/javascript" src="js/bootbox.min.js"></script>
+    <!-- bxSlider-->
+    <script src="js/bxslider/bxslider.min.js"></script>
+    <link href="js/bxslider/bxslider.css" rel="stylesheet">
     <!--FONT AWESOME-->
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
     <!--MAPBOX-->
@@ -44,6 +47,8 @@
     
     <a name="map"></a>
     
+    <div id="sandbox" style="display: none"></div>
+    
     <!-- Static navbar -->
     <!--nav class="navbar navbar-default navbar-static-top">
       <div class="container">
@@ -74,7 +79,7 @@
         
     <div id="map">
         <div id="instructions"></div>
-        <button onclick=resetExtent()>Reset Map</button>
+        <button id="resetBt" onclick=resetExtent()>Reset Map</button>
         <a href="http://southernenvironment.org"><img class="logo" src="css/selc-logo.png" style="width: 20vh;"></a>
     </div>
     

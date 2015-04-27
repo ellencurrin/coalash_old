@@ -79,7 +79,7 @@ function buildMap() {
     })
     //.addTo(map);
 
-    buildPonds()
+    buildPonds(1)
     buildStates()
     
     states.on('mouseover', function(e) {
@@ -172,12 +172,13 @@ function buildPlants() {
             var border_color
             var label = marker.feature.properties.power_plan
             var content
-            var src
+            var src = []
             
             if (marker.feature.properties.selc_ltgtn == "Yes") {
                 border_color = 'rgba(255, 97, 56, 1)', //'#FF6138'
-                src = 'http://welovemountainislandlake.files.wordpress.com/2013/01/riverbendcoalash-wbobbit.jpg',
-                content = marker.feature.properties.power_plan + '</br><img src="' + src + '" style="width: 180px; height: 180px;">',
+                src.push('http://welovemountainislandlake.files.wordpress.com/2013/01/riverbendcoalash-wbobbit.jpg'),
+                src.push('http://switchboard.nrdc.org/blogs/bhayat/assets_c/2014/02/Dan%20River%20Spill%20Aerial%202%20Photo%20by%20Waterkeeper%20AllianceRick%20Dove-thumb-500x333-14631.jpg')
+                content = marker.feature.properties.power_plan + '</br><img src="' + src[0] + '" style="width: 180px; height: 180px;">',
                 marker.bindLabel(content)
             } else {
                 border_color = 'rgba(255, 255, 255, .5)',
@@ -195,6 +196,7 @@ function buildPlants() {
             var url = marker.feature.properties.factsheet
             
             marker.on('click', function(e){
+                buildPonds(e.target.feature)
                 console.log(e)
                 map.setView(e.latlng, 15)
                 if (marker.feature.properties.selc_ltgtn == "Yes") {
@@ -212,11 +214,37 @@ function buildPlants() {
     map.fitBounds(states.getBounds())
 }
 
-function buildPonds() {
-    ponds = omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
+function buildPonds(plant) {
+    if (plant == 1) {
+        var plantID = 00000
+    } else {
+        var plantID = plant.properties.plant_code
+    }
+    ponds = L.geoJson()
+    omnivore.geojson('data/coal_ash_impoundments_selc.geojson')
     .on('ready', function(go) {
-        this.eachLayer(function(polygon) {         
-            /// Set Style
+        this.eachLayer(function(polygon) {
+            var pondID = polygon.feature.properties.plant_id
+            if (pondID == plantID) {
+                ponds.addData(polygon.feature)
+            } else {
+                console.log("no")
+            }
+        })
+        pondStyle(ponds)  
+    })
+}
+
+function pondStyle(ponds) {
+    ponds.eachLayer(function(polygon) {
+        console.log(polygon)
+        
+        var label = '<div>'+ polygon.feature.properties.impoundmen +' | '+polygon.feature.properties.plant_full+''
+            label += '</br> Condition Assessment: '+ polygon.feature.properties.epa_con_as
+            label += '</div>'
+            polygon.bindLabel(label)
+            
+        /// Set Style
             if (polygon.feature.properties.epa_con_as == "Poor") {
                 polygon.setStyle ( {
                             color: red, 
@@ -251,28 +279,49 @@ function buildPonds() {
                 })
             }
             
-            /// BUILD LABEL
-            var label = '<div>'+ polygon.feature.properties.impoundmen +' | '+polygon.feature.properties.plant_full+''
-            label += '</br> Condition Assessment: '+ polygon.feature.properties.epa_con_as
-            label += '</div>'
-            polygon.bindLabel(label)
-            
-            polygon.on('click', function(e) {
-                map.setView(e.latlng, 15)
-            })
-            
+        polygon.on('click', function(e) {
+            //map.setView(e.latlng, 15)
+            openDialog("00", "foo")
         })
-
     })
-    //.addTo(map);
+    map.fitBounds(ponds.getBounds())
 }
 
-
 function openDialog(marker, src) {
+    if (marker != "00") {
+        imageSRC = src
+        name = marker.feature.properties.power_plan
+        url = marker.feature.properties.seca_url
+        //message = '<img src="'+ imageSRC[0] +'" style="width: 100%; height: 100%">'
+        
+    }
+    
+    title = '<h4 style="color: black; display: inline;">'+ name +'</h4>'
+        title += '<a style="font-size: 12px; margin-left: 20px;" href="' + url +'" target="_blank;"><button>more at southeastcoalash.org</button> </a>'
+        ul = document.createElement('ul')
+        ul.className="bxslider"
+        for (i = 0; i < imageSRC.length; i++) {
+            li = document.createElement('li')
+            media = document.createElement('img')
+            media.src = imageSRC[i]
+            media.style = "margin: auto;"
+            p = document.createElement('p')
+            txt = document.createTextNode("caption goes here")
+            txt.style = "position: absolute; z-index: 200; bottom: 0;"
+            p.appendChild(txt)
+            li.appendChild(media)
+            li.appendChild(p)
+            ul.appendChild(li)
+            //document.getElementById('sandbox').appendChild(ul)
+        }
+        message = document.createElement('div').appendChild(ul)
+ 
     bootbox.dialog({
-            message: '<img src="'+ src +'" style="width: 100%; height: 100%">',
-            title: '<h4 style="color: black;">'+ marker.feature.properties.power_plan +'</h4>',
+        message: message,
+        title: title
     })
+    
+    $('.bxslider').bxSlider();
 }
 
 
